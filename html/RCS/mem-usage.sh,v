@@ -1,0 +1,141 @@
+head	1.2;
+access;
+symbols;
+locks
+	cacti:1.2; strict;
+comment	@# @;
+
+
+1.2
+date	2007.01.07.05.09.59;	author cacti;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2006.12.30.19.17.21;	author cacti;	state Exp;
+branches;
+next	;
+
+
+desc
+@working version
+@
+
+
+1.2
+log
+@cosmetic change.
+@
+text
+@#!/bin/bash
+
+group=$1
+host=$2
+type=$3
+ts=$4
+
+rrdpath="/home/cacti/rra"
+rrdfile="$rrdpath/$group-$host-$type.rrd"
+
+let stime=-86400*ts
+let etime=-240*ts
+
+/usr/bin/rrdtool graph - \
+--imgformat=PNG \
+--start=$stime \
+--end=$etime \
+--title="$group $host - $type ($ts-day)" \
+--rigid \
+--base=1000 \
+--height=120 \
+--width=700 \
+--alt-autoscale-max \
+--lower-limit=0 \
+--vertical-label="Bytes" \
+DEF:a1="$rrdfile":free:AVERAGE \
+DEF:b1="$rrdfile":buffers:AVERAGE \
+DEF:c1="$rrdfile":cache:AVERAGE \
+DEF:d1="$rrdfile":used:AVERAGE \
+DEF:e1="$rrdfile":swap:AVERAGE \
+CDEF:a=a1,1024,* \
+CDEF:b=b1,1024,* \
+CDEF:c=c1,1024,* \
+CDEF:d=d1,1024,* \
+CDEF:e=e1,1024,* \
+AREA:a#00CF00:"Free"  \
+GPRINT:a:LAST:"Current\:%8.0lf %s"  \
+GPRINT:a:AVERAGE:"Average\:%8.0lf %s"  \
+GPRINT:a:MAX:"Maximum\:%8.0lf %s\n"  \
+STACK:b#F5F800:"Buffers"  \
+GPRINT:b:LAST:"Current\:%8.0lf %s"  \
+GPRINT:b:AVERAGE:"Average\:%8.0lf %s"  \
+GPRINT:b:MAX:"Maximum\:%8.0lf %s\n" \
+STACK:c#8D00BA:"Cache"  \
+GPRINT:c:LAST:"Current\:%8.0lf %s"  \
+GPRINT:c:AVERAGE:"Average\:%8.0lf %s"  \
+GPRINT:c:MAX:"Maximum\:%8.0lf %s\n" \
+STACK:d#FF4105:"Used"  \
+GPRINT:d:LAST:"Current\:%8.0lf %s"  \
+GPRINT:d:AVERAGE:"Average\:%8.0lf %s"  \
+GPRINT:d:MAX:"Maximum\:%8.0lf %s\n" \
+STACK:e#0000FF:"Swap"  \
+GPRINT:e:LAST:"Current\:%8.0lf %s"  \
+GPRINT:e:AVERAGE:"Average\:%8.0lf %s"  \
+GPRINT:e:MAX:"Maximum\:%8.0lf %s" 
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 2
+a6 1
+type="mem-usage"
+a9 5
+grpath="/home/cacti/cacti-0.8.6i/graphs"
+
+timescale="1 2 7 30 365"
+
+for ts in $timescale; do 
+d14 1
+a14 1
+/usr/bin/rrdtool graph $grpath/$group-$host-$type-$ts.png \
+d25 11
+a35 6
+--vertical-label="" \
+DEF:a="$rrdfile":free:AVERAGE \
+DEF:b="$rrdfile":buffers:AVERAGE \
+DEF:c="$rrdfile":cache:AVERAGE \
+DEF:d="$rrdfile":used:AVERAGE \
+DEF:e="$rrdfile":swap:AVERAGE \
+d37 3
+a39 3
+GPRINT:a:LAST:"Current\:%8.2lf %s"  \
+GPRINT:a:AVERAGE:"Average\:%8.2lf %s"  \
+GPRINT:a:MAX:"Maximum\:%8.2lf %s\n"  \
+d41 3
+a43 3
+GPRINT:b:LAST:"Current\:%8.2lf %s"  \
+GPRINT:b:AVERAGE:"Average\:%8.2lf %s"  \
+GPRINT:b:MAX:"Maximum\:%8.2lf %s\n" \
+d45 3
+a47 3
+GPRINT:c:LAST:"Current\:%8.2lf %s"  \
+GPRINT:c:AVERAGE:"Average\:%8.2lf %s"  \
+GPRINT:c:MAX:"Maximum\:%8.2lf %s\n" \
+d49 3
+a51 3
+GPRINT:d:LAST:"Current\:%8.2lf %s"  \
+GPRINT:d:AVERAGE:"Average\:%8.2lf %s"  \
+GPRINT:d:MAX:"Maximum\:%8.2lf %s\n" \
+d53 3
+a55 3
+GPRINT:e:LAST:"Current\:%8.2lf %s"  \
+GPRINT:e:AVERAGE:"Average\:%8.2lf %s"  \
+GPRINT:e:MAX:"Maximum\:%8.2lf %s" 
+a56 1
+done
+@

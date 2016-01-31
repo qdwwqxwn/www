@@ -1,0 +1,426 @@
+head	1.10;
+access;
+symbols;
+locks
+	cacti:1.10; strict;
+comment	@# @;
+
+
+1.10
+date	2006.12.31.20.35.15;	author cacti;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2006.12.31.20.31.34;	author cacti;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2006.12.30.20.07.50;	author cacti;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2006.12.30.05.20.25;	author cacti;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2006.12.28.01.59.28;	author cacti;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2006.12.27.05.05.24;	author cacti;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2006.12.27.04.40.32;	author cacti;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2006.12.27.04.14.35;	author cacti;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2006.12.27.03.46.10;	author cacti;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2006.12.26.21.52.46;	author cacti;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.10
+log
+@fixed disk stats for 2.4
+@
+text
+@#!/bin/bash
+
+#usage: reporter.sh 
+
+path=`dirname $0`
+
+. $path/conf.sh
+
+ver=`uname -r |awk -F'.' '{OFS=""; print \$1, \$2}'`
+
+# CPU usage (user, system, idle, and iowat) and load avg (1, 5 and 15min)
+# assuming kernel 2.6.x 
+output=`uptime`
+load=`echo $output | grep 'load average' | awk -F 'load average:' '{print \$2}' |sed -e 's/,/:/g' -e 's/ //g'`
+output=`top -b -n 1 |head -n 3`
+usage=`top -b -n 1 |head -n 3 |tail -n 1 |awk '{OFS=":";print \$2, \$4, \$8, \$10}' |sed -e 's/%//g'`
+
+ltmp=`urlencode "$load"`
+utmp=`urlencode "$usage"`
+
+${baseURL}\&act=update\&type=cpu-usage\&data=$utmp\&dt=g
+${baseURL}\&act=update\&type=cpu-load\&data=$ltmp\&dt=g
+
+# mem usage: free,  buffers, cache, used (stacked) and swap (line)
+#free:buffer:cache
+fbc=`free |grep 'Mem:' |awk '{OFS=":"; print \$4, \$6, \$7}'`
+used=`free |grep 'buffers/cache' |awk '{print \$3}'`
+swap=`free |grep '^Swap' |awk '{print \$3}'`
+data=`urlencode "$fbc:$used:$swap"`
+
+${baseURL}\&act=update\&type=mem-usage\&data=$data\&dt=g
+
+#processes (sleeping, stoped, zombi, running) (stacked)
+if [ $ver -eq 24 ]; then
+ out=`top -b -n 1 |head -n 6 |grep processes |awk '{OFS=":"; print \$3, \$9, \$7, \$5}'`
+else
+ out=`top -b -n 1 |head -n 3 |grep 'Tasks' |awk '{OFS=":"; print \$6, \$8, \$10, \$4}'`
+fi
+data=`urlencode "$out"`
+
+${baseURL}\&act=update\&type=proc-usage\&data=$data\&dt=g
+
+# disk read & write and usage -- send mount points to server
+read=''
+write=''
+used=''
+for part in $parts; do 
+ if [ $ver -eq 24 ]; then 
+  sread=`grep " $part " /proc/partitions |awk '{print \$7}'`
+  swrite=`grep " $part " /proc/partitions |awk '{print \$11}'`
+ else 
+  sread=`grep " $part " /proc/diskstats |awk '{print \$5}'`
+  swrite=`grep " $part " /proc/diskstats |awk '{print \$7}'`
+ fi
+ duse=`df |grep "/dev/$part" |awk '{print \$5}' |sed -e 's/%//'`
+ read="$read:$sread"
+ write="$write:$swrite"
+ used="$used:$duse"
+done
+ rdata=`echo $read |sed -e 's/^://'`
+ wdata=`echo $write |sed -e 's/^://'`
+ udata=`echo $used |sed -e 's/^://'`
+ 
+rurl=`urlencode "$rdata"`
+wurl=`urlencode "$wdata"`
+uurl=`urlencode "$udata"`
+
+${baseURL}\&act=update\&type=disk-read\&data=$rurl\&dt=c
+${baseURL}\&act=update\&type=disk-write\&data=$wurl\&dt=c
+${baseURL}\&act=update\&type=disk-usage\&data=$uurl\&dt=g
+
+# network IO:  a separate inf for each rrd : incoming:outgoing 
+for dev in $ifs; do
+ io=`grep " ${dev}:" /proc/net/dev |awk -F ':' '{print \$2}' |awk '{OFS=":"; print \$1, \$9}'`
+ data=`urlencode "$io"`
+ ${baseURL}\&act=update\&type=net-$dev\&data=$data\&dt=c
+done
+
+# tcp socket usage and open files (est, syn_sent, last_ack) 
+output=`netstat -tan|tail -n +3|awk '{print \$6}'`
+est=0
+syn_sent=0
+last_ack=0
+
+for state in $output; do
+    case "$state" in
+        ESTABLISHED)
+         let est=est+1
+         ;;
+        SYN_SENT)
+         let syn_sent=syn_sent+1
+         ;;
+        LAST_ACK)
+         let last_ack=last_ack+1
+         ;;
+    esac
+done
+
+data=`urlencode "$est:$syn_sent:$last_ack"`
+
+${baseURL}\&act=update\&type=sock-usage\&data=$data\&dt=g
+
+exit 0
+
+
+@
+
+
+1.9
+log
+@now support 2.4 and 2.6 both
+@
+text
+@d49 2
+a50 2
+  sread=`grep " $part " /proc/diskstats |awk '{print \$7}'`
+  swrite=`grep " $part " /proc/diskstats |awk '{print \$11}'`
+@
+
+
+1.8
+log
+@ fixed net interface
+@
+text
+@d9 2
+d34 5
+a38 1
+out=`top -b -n 1 |head -n 3 |grep 'Tasks' |awk '{OFS=":"; print \$6, \$8, \$10, \$4}'`
+d48 7
+a54 2
+ sread=`grep " $part " /proc/diskstats |awk '{print \$5}'`
+ swrite=`grep " $part " /proc/diskstats |awk '{print \$7}'`
+@
+
+
+1.7
+log
+@*** empty log message ***
+@
+text
+@d65 1
+a65 1
+ ${baseURL}\&act=update\&type=net-io\&if=$dev\&data=$data\&dt=c
+@
+
+
+1.6
+log
+@*** empty log message ***
+@
+text
+@d19 2
+a20 2
+${baseURL}\&act=update\&type=cpu-usage\&data=$utmp
+${baseURL}\&act=update\&type=cpu-load\&data=$ltmp
+d29 1
+a29 1
+${baseURL}\&act=update\&type=mem-usage\&data=$data
+d35 1
+a35 1
+${baseURL}\&act=update\&type=proc-usage\&data=$data
+d57 3
+a59 3
+${baseURL}\&act=update\&type=disk-read\&data=$rurl
+${baseURL}\&act=update\&type=disk-write\&data=$wurl
+${baseURL}\&act=update\&type=disk-usage\&data=$uurl
+d65 1
+a65 1
+ ${baseURL}\&act=update\&type=net-io\&if=$dev\&data=$data
+d90 1
+a90 1
+${baseURL}\&act=update\&type=sock-usage\&data=$data
+@
+
+
+1.5
+log
+@Done. to be teted.
+@
+text
+@d19 2
+a20 2
+${baseURL}\&act=update\&type=cpu\&cat=usage\&data=$utmp
+${baseURL}\&act=update\&type=cpu\&cat=load\&data=$ltmp
+d29 1
+a29 1
+${baseURL}\&act=update\&type=mem\&cat=usage\&data=$data
+d35 1
+a35 1
+${baseURL}\&act=update\&type=proc\&cat=usage\&data=$data
+d57 3
+a59 3
+${baseURL}\&act=update\&type=disk\&cat=read\&data=$rurl
+${baseURL}\&act=update\&type=disk\&cat=write\&data=$wurl
+${baseURL}\&act=update\&type=disk\&cat=usage\&data=$uurl
+d65 1
+a65 1
+ ${baseURL}\&act=update\&type=net\&cat=io\&if=$dev\&data=$data
+d90 1
+a90 1
+${baseURL}\&act=update\&type=sock\&cat=usage\&data=$data
+@
+
+
+1.4
+log
+@disk usage done.
+@
+text
+@d53 3
+a55 9
+echo rdata: $rdata
+echo wdata: $wdata
+echo udata: $udata
+ 
+exit
+ 
+${baseURL}\&act=update\&type=disk\&cat=read\&data=$url
+${baseURL}\&act=update\&type=disk\&cat=write\&data=$url
+${baseURL}\&act=update\&type=disk\&cat=usage\&data=$url
+d57 5
+a61 1
+# network IO:  a separate inf for each rrd
+d63 23
+a85 1
+ ${baseURL}\&act=update\&type=net\&cat=io\&if=$dev
+d88 5
+a92 2
+# tcp socket usage and open files (est, syn_sent, last_ack, ofd)
+ ${baseURL}\&act=update\&type=sock\&cat=usage
+@
+
+
+1.3
+log
+@up to memory now
+@
+text
+@d27 1
+a27 3
+data="$fbc:$used:$swap"
+echo MEM: $data
+exit
+d29 1
+d31 3
+a33 1
+${baseURL}\&act=create\&type=mem\&cat=usage
+d35 1
+a35 2
+#processes (sleeping, stoped, zombi, running) (stacked)
+${baseURL}\&act=create\&type=proc\&cat=usage
+d38 24
+a61 4
+url=`urlencode "$mnts"`
+${baseURL}\&act=create\&type=disk\&cat=read\&data=$url
+${baseURL}\&act=create\&type=disk\&cat=write\&data=$url
+${baseURL}\&act=create\&type=disk\&cat=usage\&data=$url
+d65 1
+a65 1
+ ${baseURL}\&act=create\&type=net\&cat=io\&if=$dev
+d69 1
+a69 1
+ ${baseURL}\&act=create\&type=sock\&cat=usage
+@
+
+
+1.2
+log
+@CPU stats are set
+@
+text
+@d18 11
+a28 2
+echo $ltmp
+echo $utmp
+a30 8
+${baseURL}\&act=create\&type=cpu\&cat=usage
+${baseURL}\&act=create\&type=cpu\&cat=load
+
+true
+if [ $? -ne 0 ]; then
+ echo "Installation 1 failed. Please contact oneway."
+ exit 1
+fi
+a31 1
+# mem usage: buffers, cache, used, free (stacked) and swap (line)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d3 1
+a3 1
+#usage: reporter.sh machine-name username passwd
+d5 1
+a5 23
+if [ $# -ne 3 ]; then
+ echo "Usage: `basename $0`  machine-name username passwd"
+ echo "Example: `basename $0` web4 webapp webpswd"
+ exit 1
+fi
+
+baseURL="/usr/bin/wget -o /dev/null http://mnt.edoors.com/receiver.php?host=$1\&group=$2\&pwd=$3"
+PWD=`pwd`
+
+# get CPU usage
+# Report CPU usage
+${baseURL}\&type=cpu\&user=$user\&system=$system\&iowait=$iowait\&idle=$idle
+
+# get MEM usage
+# Report MEM usage
+${baseURL}\&type=mem\&used=$used\&buffers=$buffers\&cached=$cached\&swap=$swap
+
+# get network traffic on all interfaces
+ifs=`tail -n +3 /proc/net/dev |awk -F':' '{print \$1}' |grep -v " lo\$"`
+for if in $ifs; do
+ #get net traffic for $if
+ ${baseURL}\&type=net\&if=$if\&in=$in\&out=$out
+done
+d7 1
+a7 1
+# get disk io
+d9 12
+a20 2
+# Get TCP socket usage
+${baseURL}\&type=sock\&established=$established\&syn_sent=$syn_sent\&last_ack=$last_ack
+d22 2
+d25 2
+a26 4
+# create rrd files on server 
+/usr/bin/wget -o /dev/null http://mnt.edoors.com/receiver.php?act=create\&host=$1\&user=$2\&pwd=$3
+
+if [ $? -ne 0 ]; then 
+d31 5
+a35 7
+# generate crontab file 
+/usr/bin/crontab -l > crontab 
+echo "*/4 * * * * $PWD/reporter.sh $1 $2 $3" >> crontab
+
+#submit to cron
+/usr/bin/crontab -r 
+/usr/bin/crontab crontab 
+d37 10
+a46 1
+/usr/bin/wget -o /dev/null -O reporter.sh http://mnt.edoors.com/reporter.sh 
+d48 2
+a49 4
+if [ $? -ne 0 ]; then 
+ echo "Installation 2 failed. Please contact oneway."
+ exit 1
+fi
+a50 1
+echo Installation completed. 
+@

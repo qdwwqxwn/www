@@ -1,0 +1,116 @@
+head	1.2;
+access;
+symbols;
+locks
+	cacti:1.2; strict;
+comment	@# @;
+
+
+1.2
+date	2007.01.22.02.53.36;	author cacti;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2007.01.19.05.52.41;	author cacti;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@added world.edoors.com
+@
+text
+@#!/bin/bash
+
+#usage: install-rt.sh machine-name username passwd
+urlencode() {
+    echo "$1" | sed -e 's/ /+/g' -e 's/&/%26/g' -e 's/\//%2F/g' -e 's/:/%3A/g'
+}
+
+# Check if wget is there
+wget --version > /dev/null 2>&1
+
+if [ $? -ne 0 ]; then 
+ echo "wget is needed. Please make sure it is installed and in your path."
+ exit 1
+fi
+
+# Check if cron job is allowed. 
+if [ ! -u /usr/bin/crontab ]; then
+ echo "You do not have permissioin to run cron job. You may need"
+ echo "to fix it by running \"chmod u+s /usr/bin/crontab\" as root"
+ echo "and then run this installation again."
+ exit 1
+fi
+
+if [ $# -ne 3 ]; then
+ echo "Usage: `basename $0`  machine-name username passwd"
+ echo "Example: `basename $0` web4 webapp webpswd"
+ exit 1
+fi
+
+pswd=`echo -n $3 |md5sum |cut -d ' ' -f 1`
+
+baseURL="/usr/bin/wget -o /dev/null -O - http://mnt.edoors.info/receiver.php?group=$2&pwd=$pswd&dir=2"
+
+PWD=`pwd`
+conf="$PWD/conf.sh"
+
+cat > $conf <<EOF 
+urlencode() {
+    echo "\$1" | sed -e 's/ /+/g' -e 's/&/%26/g' -e 's/\//%2F/g' -e 's/:/%3A/g'
+}
+
+EOF
+
+# http response time componentse (t_total, t_lookup, t_connect, http_code) 
+url=`urlencode "t_total t_lookup t_connect http_code"`
+newkey=`${baseURL}\&act=create\&type=response-time\&data=$url\&dt=g\&host=home`
+
+if [ "$newkey" == "access-denied" -o $? -ne 0 ]; then
+ echo "Installation 1 failed. Please contact oneway."
+ exit 1
+else 
+ updtURL="/usr/bin/wget -o /dev/null -O /dev/null http://mnt.edoors.info/receiver.php?group=$2&pwd=$newkey&dir=2"
+ echo "baseURL=\"$updtURL\"" >> $conf
+fi
+
+newkey=`${baseURL}\&act=create\&type=response-time\&data=$url\&dt=g\&host=news`
+newkey=`${baseURL}\&act=create\&type=response-time\&data=$url\&dt=g\&host=blog`
+newkey=`${baseURL}\&act=create\&type=response-time\&data=$url\&dt=g\&host=forum`
+newkey=`${baseURL}\&act=create\&type=response-time\&data=$url\&dt=g\&host=book`
+newkey=`${baseURL}\&act=create\&type=response-time\&data=$url\&dt=g\&host=world`
+
+if [ ! -f crontab ]; then
+# generate crontab file 
+ /usr/bin/crontab -l > crontab 2> /dev/null
+ echo "*/4 * * * * $PWD/rt-reporter.sh" >> crontab
+
+#submit to cron
+ /usr/bin/crontab -r > /dev/null 2>&1 
+ /usr/bin/crontab crontab 
+fi 
+
+if [ $? -ne 0 ]; then 
+ echo "Installation 2 failed. Please contact oneway."
+ exit 1
+fi
+
+echo Installation completed. 
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d60 1
+@

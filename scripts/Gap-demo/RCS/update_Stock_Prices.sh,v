@@ -1,0 +1,66 @@
+head	1.1;
+access;
+symbols;
+locks
+	ec2-user:1.1; strict;
+comment	@# @;
+
+
+1.1
+date	2015.12.04.04.13.00;	author ec2-user;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#! /usr/bin/bash
+
+history=1   # if 1, fill in some historical data, assuming 1/1/2005-11/30/2015 
+            # otherwise bring data up to date, starting from is 12/1/2015 
+
+rrdpath=/var/www/data
+
+cus="Gap"
+
+itype="Stock_Prices" 
+rrdf=$rrdpath/${cus}/${itype}.rrd
+
+if [ $history -gt 0 ]; then 
+  echo history ...
+  stime=`date -d "1/1/2005" +%s`
+  etime=`date -d "12/3/2015" +%s`
+  dt=86400
+  let len=(etime-stime)/dt
+
+  ts=$stime
+  head -$len raw-data/Stock_Prices.txt | while read line
+  do 
+   price=`echo $line |awk '{print $2}'`
+   #echo "$ts:$price" 
+   /usr/bin/rrdtool update $rrdf "$ts:$price" 
+   let ts=ts+dt
+  done
+
+else 
+  echo updating ...
+  stime=`date -d "1/1/2005" +%s`
+  dt=86400
+  cdate=`date +%m/%d/%Y`
+  ctime=`date -d "$cdate" +%s`
+  let len=(ctime-stime)/dt
+
+  price=`head -$len raw-data/Stock_Prices.txt |tail -1 |awk '{print $2}'`
+  /usr/bin/rrdtool update $rrdf "$ctime:$price" 
+fi
+  
+  
+
+@

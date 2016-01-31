@@ -1,0 +1,95 @@
+head	1.3;
+access;
+symbols;
+locks
+	cacti:1.3; strict;
+comment	@# @;
+
+
+1.3
+date	2007.01.22.02.53.19;	author cacti;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2007.01.21.21.30.30;	author cacti;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2007.01.19.05.52.19;	author cacti;	state Exp;
+branches;
+next	;
+
+
+desc
+@set on SEE1 to run for WEBAPP services.
+@
+
+
+1.3
+log
+@added world.edoors.com
+@
+text
+@#!/bin/bash
+
+#usage: rt-reporter.sh , response time reporter
+
+path=`dirname $0`
+
+. $path/conf.sh
+
+url[0]="http://www.edoors.com/index_zh-cn.html" 
+url[1]="http://news.edoors.com/gb/index.html"
+url[2]="http://forum.edoors.com/"
+url[3]="http://uptime.blog.edoors.com/index.php"
+url[4]="http://book.edoors.com/"
+url[5]="http://wayaya.world.edoors.com/"
+
+id=0
+for host in home news forum blog book world; do 
+curl=${url[$id]}
+let id=id+1
+
+out=`curl -m 10 -o /dev/null -s -w "t_total: %{time_total} t_nslookup: %{time_namelookup} t_connect: %{time_connect} http_code %{http_code}\n" $curl`
+exit_code=$?
+t_total=`echo $out |cut -d ' ' -f 2`
+t_nslookup=`echo $out |cut -d ' ' -f 4`
+t_connect=`echo $out |cut -d ' ' -f 6`
+http_code=`echo $out |cut -d ' ' -f 8`
+
+#echo $t_total $t_nslookup $t_connect $http_code
+data=`urlencode "$t_total:$t_nslookup:$t_connect:$http_code"`
+${baseURL}\&act=update\&type=response-time\&data=$data\&dt=g\&host=$host
+
+done
+exit
+
+exit 0
+
+
+@
+
+
+1.2
+log
+@fixed a bug
+@
+text
+@d14 1
+d17 1
+a17 1
+for host in home news forum blog book; do 
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+out=`curl -m 10 -o /dev/null -s -w "t_total: %{time_total} t_nslookup: %{time_namelookup} t_connect: %{time_connect} http_code %{http_code}\n" $url`
+@

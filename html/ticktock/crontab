@@ -1,0 +1,2 @@
+*/5 * * * * /usr/local/bin/php /home/cacti/cacti-0.8.6i/poller.php > /dev/null 2>&1
+*/4 * * * * /home/cacti/my-scripts/reporter.sh

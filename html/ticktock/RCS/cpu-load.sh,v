@@ -1,0 +1,112 @@
+head	1.2;
+access;
+symbols;
+locks
+	cacti:1.2; strict;
+comment	@# @;
+
+
+1.2
+date	2007.01.07.05.08.34;	author cacti;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2006.12.30.19.32.44;	author cacti;	state Exp;
+branches;
+next	;
+
+
+desc
+@working version.
+@
+
+
+1.2
+log
+@cosmetic change.
+@
+text
+@#!/bin/bash
+
+group=$1
+host=$2
+type=$3
+ts=$4
+
+rrdpath="/home/cacti/rra"
+rrdfile="$rrdpath/$group-$host-$type.rrd"
+
+let stime=-86400*ts
+let etime=-240*ts
+
+/usr/bin/rrdtool graph - \
+--imgformat=PNG \
+--start=$stime \
+--end=$etime \
+--title="$group $host - $type ($ts-day)" \
+--rigid \
+--base=1000 \
+--height=120 \
+--width=700 \
+--alt-autoscale-max \
+--lower-limit=0 \
+--vertical-label="No unit" \
+--units-exponent=0 \
+DEF:a="$rrdfile":1min:AVERAGE \
+DEF:b="$rrdfile":5min:AVERAGE \
+DEF:c="$rrdfile":15min:AVERAGE \
+AREA:a#FF6600:"1min"  \
+GPRINT:a:LAST:"Current\:%8.2lf "  \
+GPRINT:a:AVERAGE:"Average\:%8.2lf "  \
+GPRINT:a:MAX:"Maximum\:%8.2lf \n"  \
+AREA:b#FF9900:"5min"  \
+GPRINT:b:LAST:"Current\:%8.2lf "  \
+GPRINT:b:AVERAGE:"Average\:%8.2lf "  \
+GPRINT:b:MAX:"Maximum\:%8.2lf \n" \
+AREA:c#FFCC00:"15min"  \
+GPRINT:c:LAST:"Current\:%8.2lf "  \
+GPRINT:c:AVERAGE:"Average\:%8.2lf "  \
+GPRINT:c:MAX:"Maximum\:%8.2lf \n" \
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 2
+a6 1
+type="cpu-load"
+a9 5
+grpath="/home/cacti/cacti-0.8.6i/graphs"
+
+timescale="1 2 7 30 365"
+
+for ts in $timescale; do 
+d14 1
+a14 1
+/usr/bin/rrdtool graph $grpath/$group-$host-$type-$ts.png \
+d25 1
+a25 1
+--vertical-label="" \
+d31 3
+a33 3
+GPRINT:a:LAST:"Current\:%8.2lf %s"  \
+GPRINT:a:AVERAGE:"Average\:%8.2lf %s"  \
+GPRINT:a:MAX:"Maximum\:%8.2lf %s\n"  \
+d35 3
+a37 3
+GPRINT:b:LAST:"Current\:%8.2lf %s"  \
+GPRINT:b:AVERAGE:"Average\:%8.2lf %s"  \
+GPRINT:b:MAX:"Maximum\:%8.2lf %s\n" \
+d39 3
+a41 3
+GPRINT:c:LAST:"Current\:%8.2lf %s"  \
+GPRINT:c:AVERAGE:"Average\:%8.2lf %s"  \
+GPRINT:c:MAX:"Maximum\:%8.2lf %s\n" \
+a42 1
+done
+@

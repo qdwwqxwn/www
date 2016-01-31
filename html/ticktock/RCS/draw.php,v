@@ -1,0 +1,363 @@
+head	1.8;
+access;
+symbols;
+locks
+	cacti:1.8; strict;
+comment	@# @;
+
+
+1.8
+date	2007.01.29.06.30.50;	author cacti;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2007.01.22.04.39.05;	author cacti;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2007.01.16.03.07.25;	author cacti;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2007.01.15.05.29.33;	author cacti;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2007.01.05.05.53.53;	author cacti;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2007.01.02.16.30.36;	author cacti;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2007.01.02.14.49.27;	author cacti;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2007.01.02.07.19.29;	author cacti;	state Exp;
+branches;
+next	;
+
+
+desc
+@roughly working
+@
+
+
+1.8
+log
+@updated links for disk-usage
+@
+text
+@<?php
+/*
+oneway's TickTock 
+*/
+
+include("./include/tauth.php");
+
+$spath="/home/cacti/my-scripts"; 
+$rrapath="/home/cacti/rra"; 
+
+// Get all user, hosts, category info. May put in MySQL  in future
+// current hack: rrd file format: user-host-cpu-usage.rrd.
+// assuming "host" can have '-'s in it. 
+
+$files = scandir ($rrapath);
+
+foreach ($files as $file) {
+  if ( ereg (".rrd$", $file) ) {
+    $tmp = ereg_replace(".rrd$", "", $file);
+    $atmp = explode("-", $tmp);
+    $auser = $atmp[0]; 
+    $ne = count ($atmp); 
+    $t1 = $atmp[$ne-2]; 
+    $t2 = $atmp[$ne-1]; 
+    $ahost = $atmp[1]; 
+    for ($nid = 2; $nid < $ne-2; $nid ++ ) {
+     $ahost = $ahost . "-" . $atmp[$nid]; 
+    }
+    $ausers[$auser] = 1;
+    $ahosts["$auser-$t1-$t2"] = $ahosts["$auser-$t1-$t2"] . "$ahost ";
+    $acats["$auser-$ahost"] = $acats["$auser-$ahost"] . "$t1-$t2 ";
+  }
+}
+
+$i=1;
+foreach ($ausers as $auser => $num) {
+  $users[$i++] = $auser;
+}
+
+
+$hosts = array("SE1", "SE2"); 
+
+$cats = array ("cpu-load", "cpu-usage", "mem-usage", "disk-read",
+               "disk-write", "proc-usage", "sock-usage", 
+               "net-eth0", "net-eth1", "net-lo");  // deleted "disk-usage"
+$tscales = array(1, 2, 7, 30, 365); 
+
+#default: display first host, all cats, at ts=1
+$cuser = $user;   // current userid from session store 
+$cby = $_GET["by"];
+$chost = $_GET["ht"];
+$ccat = $_GET["cat"];
+$cts = $_GET["ts"];
+if ( $cuser === "admin" ) $cuser = $_GET["user"];
+if ( empty( $cuser ) )  $cuser = $users[1];   
+
+$hosts = explode(" ", $ahosts["$cuser-cpu-load"]); 
+
+if ( empty( $cby ) )  $cby = "host"; 
+if ( empty( $chost ) ) $chost = $hosts[0]; 
+
+$cats = explode(" ", $acats["$cuser-$chost"]); 
+if ( empty( $ccat ) ) $ccat = $cats[0]; 
+if ( empty( $cts ) ) $cts = 1; 
+
+?>
+<html>
+<head>
+	<title>Login to TickTock</title>
+	<STYLE TYPE="text/css">
+	<!--
+		BODY, TABLE, TR, TD {font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px;}
+		A {text-decoration: none;}
+		A:active { text-decoration: none;}
+		A:hover {text-decoration: underline; color: #333333;}
+		A:visited {color: Blue;}
+	-->
+	</style>
+</head>
+<body bgcolor="#FFFFFF">
+ <table width=800><tr><td width=200> &nbsp; </td> <td align="right"> 
+   <a href="logout.php">Logout</a></td></tr></table>
+
+<?php 
+ if ($user === "admin" ) {
+  echo "<table bgcolor=\"#FF9900\" width=800><tr><td align=\"center\" width=200> By User </td> <td> "; 
+  foreach ($users as $tuser) { 
+   echo "<a href=\"draw.php?by=$cby&ts=$cts&user=$tuser\">$tuser | </a>"; 
+  }
+  echo " </td> </tr> </table> ";
+ } 
+
+  echo "<table bgcolor=\"#FFCC00\" width=800><tr><td align=\"center\" width=200> By Category </td> <td> "; 
+  echo "Performance  | <a href=\"txt-draw.php?by=$oby&cat=$ccat&ht=$host&ts=$cts&user=$cuser\">Disk Usage</a> "; 
+ if ($cuser === "WEBAPP" ) {
+   echo "| <a href=\"rt-draw.php?by=$cby&cat=$ccat&ht=$chost&ts=$cts&user=$cuser\">Service Response Time</a>"; 
+ }
+  echo " </td> </tr> </table> ";
+?>
+
+      <table bgcolor="#FFFF00" width=800><tr><td align="center" width=200> By Host </td> <td> 
+<?php
+  foreach ($hosts as $host) { 
+   if (! empty($host) )
+   echo "<a href=\"draw.php?by=host&cat=$ccat&ht=$host&ts=$cts&user=$cuser\">$host </a>"; 
+  }
+?>
+           </td> </tr> 
+      </table> 
+
+      <table bgcolor="#FFCC00" width=800><tr><td align="center" width=200> By Data </td> <td> 
+
+<?php
+  foreach ($cats as $cat) { 
+   if (! empty($cat) && $cat !== "disk-usage" )
+   echo "<a href=\"draw.php?by=cat&cat=$cat&ht=$chost&ts=$cts&user=$cuser\">$cat | </a>"; 
+  }
+?>
+       </td> </tr> 
+      </table> 
+
+      <table bgcolor="#dddddd" width=800><tr><td align="center" width=200> By Timescale </td>
+      <td> 
+<?php
+  echo "<a href=\"draw.php?by=$cby&cat=$ccat&ht=$chost&ts=1&user=$cuser\"> 1 Day |</a>"; 
+  echo "<a href=\"draw.php?by=$cby&cat=$ccat&ht=$chost&ts=2&user=$cuser\"> 2 Day |</a>"; 
+  echo "<a href=\"draw.php?by=$cby&cat=$ccat&ht=$chost&ts=7&user=$cuser\"> 1 Week |</a>"; 
+  echo "<a href=\"draw.php?by=$cby&cat=$ccat&ht=$chost&ts=30&user=$cuser\"> 1 Month |</a>"; 
+  echo "<a href=\"draw.php?by=$cby&cat=$ccat&ht=$chost&ts=365&user=$cuser\"> 1 Year </a>"; 
+?>
+
+ </td></tr> 
+      </table>
+
+<table>
+<?php 
+if ( $cby === "host" ) { 
+ foreach ($cats as $cat) { 
+  if (! empty($cat) && $cat !== "disk-usage" )
+  echo "<tr> <td colspan=5><img src=\"plot.php?ht=$chost&cat=$cat&ts=$cts&user=$cuser\"></td> </tr>"; 
+ }
+} else {  // by cat 
+ foreach ($hosts as $host) { 
+  if (! empty($host) )
+  echo "<tr> <td colspan=5><img src=\"plot.php?ht=$host&cat=$ccat&ts=$cts&user=$cuser\"></td> </tr>"; 
+ } 
+}
+
+?>
+
+<tr height=40> <td colspan="5"> &nbsp; </td> </tr>
+
+</table>
+
+
+</body></html>
+@
+
+
+1.7
+log
+@added link to response-time plots and disk usage.
+@
+text
+@d94 1
+a94 1
+  echo "Performance  | Disk Usage "; 
+@
+
+
+1.6
+log
+@add host in case hostname has '-' in it.
+@
+text
+@d86 1
+a86 1
+  echo "<table bgcolor=\"#FFCC00\" width=800><tr><td align=\"center\" width=200> By User </td> <td> "; 
+d92 7
+@
+
+
+1.5
+log
+@deleted display of "disk-usage". Will use a table to do that.
+@
+text
+@d12 2
+d20 9
+a28 1
+    list($auser, $ahost, $t1, $t2) = explode("-", $tmp);
+@
+
+
+1.4
+log
+@array index starts from 0, not 1
+@
+text
+@d33 1
+a33 1
+$cats = array ("cpu-load", "cpu-usage", "mem-usage", "disk-usage", "disk-read",
+d35 1
+a35 1
+               "net-eth0", "net-eth1", "net-lo"); 
+d98 1
+a98 1
+   if (! empty($cat) )
+d122 1
+a122 1
+  if (! empty($cat) )
+@
+
+
+1.3
+log
+@final working version.
+@
+text
+@d50 1
+a50 1
+if ( empty( $chost ) ) $chost = $hosts[1]; 
+d53 1
+a53 1
+if ( empty( $ccat ) ) $ccat = $cats[1]; 
+@
+
+
+1.2
+log
+@Working. hosts, cats, etc. are now hardcoded for SE.
+@
+text
+@d11 18
+a28 1
+/* create graphs  */ 
+a29 1
+$users = array("Monitor", "BACKWEB", "SE", "WEBAPP", "PH", "GPASS"); 
+d46 3
+d51 2
+d78 1
+a78 1
+   echo "<a href=\"draw.php?by=$cby&ht=$chost&ts=$cts&cat=$ccat&user=$tuser\">$tuser | </a>"; 
+d87 1
+d98 1
+d122 1
+d127 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d13 2
+d23 1
+d28 2
+d50 14
+a63 4
+<table>
+<tr><td> 
+      <table bgcolor="#00FF00" width=800><tr><td align="center" width=200> By Host </td>
+             <td> 
+d65 3
+a67 3
+     foreach ($hosts as $host) { 
+       echo "<a href=\"draw.php?by=host&ht=$host&ts=$cts\">$host </a>"; 
+     }
+a70 4
+ </td>
+</tr>
+<tr><td> &nbsp; &nbsp; </td></tr>
+<tr> <td> 
+d72 1
+a72 2
+      <table bgcolor="#FFFF00" width=800><tr><td align="center" width=200> By Data </td>
+             <td> 
+d75 3
+a77 3
+     foreach ($cats as $cat) { 
+       echo "<a href=\"draw.php?by=cat&cat=$cat&ts=$cts\">$cat | </a>"; 
+     }
+a81 3
+</td></tr>
+<tr> <td> 
+
+d85 5
+a89 5
+  echo "<a href=\"draw.php?by=$cby&cat=$ccat&ht=$chost&ts=1\"> 1 Day |</a>"; 
+  echo "<a href=\"draw.php?by=$cby&cat=$ccat&ht=$chost&ts=2\"> 2 Day |</a>"; 
+  echo "<a href=\"draw.php?by=$cby&cat=$ccat&ht=$chost&ts=7\"> 1 Week |</a>"; 
+  echo "<a href=\"draw.php?by=$cby&cat=$ccat&ht=$chost&ts=30\"> 1 Month |</a>"; 
+  echo "<a href=\"draw.php?by=$cby&cat=$ccat&ht=$chost&ts=365\"> 1 Year </a>"; 
+a94 2
+</td></tr>
+</table>
+d99 1
+a99 1
+  echo "<tr> <td colspan=5><img src=\"plot.php?ht=$chost&cat=$cat&ts=$cts\"></td> </tr>"; 
+d103 1
+a103 1
+  echo "<tr> <td colspan=5><img src=\"plot.php?ht=$host&cat=$ccat&ts=$cts\"></td> </tr>"; 
+@

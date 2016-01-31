@@ -1,0 +1,285 @@
+/**************************************************************
+   Visit studio7designs.com for more layouts and downloads for this template!
+ **************************************************************/
+
+/*********************************************************
+   HTML Elements
+ *********************************************************/
+
+html {
+  overflow-y: scroll;
+  height: 100%;
+}
+
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  text-align: left;
+
+/*  background: url(../images/bg/light_body.gif) repeat-y top center;  */
+  background-color: #ffffff; 
+  font: 400 1.2em times, verdana, arial, sans-serif;
+  line-height: 150%;
+  
+  color: #555;
+}
+
+
+/* Headers */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 10px 0;
+  padding: 0;
+}
+
+
+h1 {
+  padding-bottom: 0.2em;
+
+  font: 400 1.6em times, arial, sans-serif;
+  color: #536C71;
+  border-bottom: 12px solid #ddd;
+}
+
+h2 {
+  font: 700 1.6em times, verdana, arial, sans-serif;
+  font-size: 1.6em;
+  color: #586B7A;
+}
+
+h3 {
+  font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif;
+  font-size: 1.2em;
+  color: #5D6F73;
+  color: #ddf; 
+}
+
+h4 {
+  font-size: 0.85em;
+  line-height: 120%;
+}
+
+h5 {
+  padding-top: 0.2em;
+  font-size: 1.00em;
+  text-indent: -1em; 
+  margin-left: 1em; 
+}
+
+
+h6 {
+  font-size: 0.8em;
+}
+
+td {
+  font-size: 1.2em;
+}
+
+
+/* Needed to horizontally pad in a coloured container */
+.horzPad h1,
+.horzPad h2,
+.horzPad h3,
+.horzPad h4,
+.horzPad h5,
+.horzPad p {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+p {
+  font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif;
+	font-size: 20px;
+	font-style: normal;
+	font-variant: normal;
+	font-weight: 400;
+	line-height: 30px;
+  text-decoration: none;
+  color: #1e90ff; 
+  color: #ddf; 
+}
+ 
+
+/* Links */
+a {
+  text-decoration: none;
+  color: #3B5D77;
+  color: #1e90ff; 
+}
+
+a:hover {
+  color: #668FA3;
+}
+
+a img {
+  border: 0;
+}
+
+a img.border {  
+  border: 1px solid #000;
+}
+
+a:hover img.border {  
+  /* Fixes IE bug - IE doesn't correctly apply the style on a:hover so need to mask it */
+  border: 1px solid #668FA3 !important;
+  border: 1px solid #FC3307;
+}
+
+
+
+/* Images */
+img
+{
+vertical-align:bottom;
+} 
+
+img.floatRight {
+  margin: 5px 0 10px 10px;
+}
+
+img.floatLeft {
+  margin: 5px 10px 10px 0;
+}
+
+
+
+/* Lists */
+ul li {
+  font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif;
+        font-size: 20px;
+        font-style: normal;
+        font-variant: normal;
+        font-weight: 400;
+        line-height: 30px;
+  text-decoration: none;
+  color: #1e90ff;
+  color: #ddf;
+}
+
+ol li {
+  font-weight: bold;
+  color: #668FA3;
+}
+
+ol li span {
+  font-weight: normal;
+  color: #444;
+}
+
+
+
+/* Blockquote */
+blockquote {
+  margin: 0;
+  padding: 0 20px;
+  background: #eee;
+  border-top: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+}
+
+
+
+/**************************************************************
+   Form Elements
+ **************************************************************/
+
+form {
+  padding: 0;
+  margin: 0;
+}
+
+/* If you're finding the input elements get pushed down, increase the width */
+label {
+  float: left;
+  width: 25%;
+  vertical-align: top;
+}
+
+input,
+textarea,
+select {
+  padding: 1px;
+  font: 400 1em verdana, sans-serif;
+  color: #999;
+  background: #EEE;
+  border: 1px solid #CCC;
+}
+
+input:focus,
+input:hover,
+textarea:focus,
+textarea:hover,
+select:focus,
+select:hover {
+  color: #000;
+  background: #E7F1F3;
+  border: 1px solid #888;
+}
+
+input.noBorder,
+input:focus.noBorder,
+input:hover.noBorder {
+  padding: 0;
+  border: 0;
+}
+
+input.button {
+  padding: 2px 5px;
+
+  font: 400 0.9em verdana, serif;
+  cursor: pointer;
+
+  color: #fff;
+  background: #ccc;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #888 #888 #8880 #888;
+}
+
+input.radio {
+  background: none;
+  border: 0px;
+}
+
+
+/* MS Word sutff */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin-top:0cm;
+	margin-right:0cm;
+	margin-bottom:10.0pt;
+	margin-left:0cm;
+	line-height:115%;
+	font-size:11.0pt;
+	font-family:Calibri;}
+
+
+.data {
+	width: 100%; 
+} 
+
+.data table { 
+	width: 100%; 
+        border-collapse:collapse;
+        border: 1px solid #555; 
+}
+
+.data td { 
+        border: 1px solid #555; 
+        text-align: center;
+}
+
+
+#menu { 
+ font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif;
+        font-size: 20px;
+        font-style: normal;
+        font-variant: normal;
+        font-weight: 500;
+        background-color:#161a3c; width:100%; height: 40px; margin-left:0; 
+        text-align: center;
+        vertical-align: middle; 
+}
+

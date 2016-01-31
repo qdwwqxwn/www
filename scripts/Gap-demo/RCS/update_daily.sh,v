@@ -1,0 +1,111 @@
+head	1.2;
+access;
+symbols;
+locks
+	ec2-user:1.2; strict;
+comment	@# @;
+
+
+1.2
+date	2015.12.04.05.15.53;	author ec2-user;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2015.12.02.23.36.28;	author root;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@#! /usr/bin/bash
+
+# Create daily rrd 
+history=0   # if 1, fill in some historical data, assuming 1/1/2005-11/30/2015
+            # otherwise bring data up to date, starting from is 12/1/2015
+
+rrdpath=/var/www/data
+type="US_Sales China_Sales EU_Sales Marketing_Expenses Media_Exposure Social_Trend Web_Sales Web_Traffic"
+
+cus="Gap"
+
+if [ $history -gt 0 ]; then
+  echo history ...
+  stime=`date -d "1/1/2005" +%s`
+  etime=`date -d "12/3/2015" +%s`
+  dt=86400
+  let len=(etime-stime)/dt
+
+  ts=$stime
+  head -$len raw-data/Stock_Prices.txt | while read line
+  do
+   price=`echo $line |awk '{print $2}'`
+   #echo "$ts:$price"
+   id=1
+    for itype in $type; do 
+      let id=id+1
+      nprice=`awk -v p=$price -v id=$id 'BEGIN {printf "%.2f", p*(sin(p*id)+1)*id*10}'`
+      rrdf=$rrdpath/${cus}/${itype}.rrd
+     /usr/bin/rrdtool update $rrdf "$ts:$nprice"
+    done 
+  let ts=ts+dt
+  done
+
+else
+  echo updating ...
+  stime=`date -d "1/1/2005" +%s`
+  dt=86400
+  cdate=`date +%m/%d/%Y`
+  ctime=`date -d "$cdate" +%s`
+  let len=(ctime-stime)/dt
+
+  price=`head -$len raw-data/Stock_Prices.txt |tail -1 |awk '{print $2}'`
+  echo $price
+  id=1
+  for itype in $type; do 
+    let id=id+1
+    nprice=`awk -v p=$price -v id=$id 'BEGIN {printf "%.2f", p*(sin(p*id)+1)*id*10}'`
+    rrdf=$rrdpath/${cus}/${itype}.rrd
+    /usr/bin/rrdtool update $rrdf "$ctime:$nprice"
+  done
+fi
+
+
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 2
+d8 1
+a10 1
+type="Stock_Prices US_Sales China_Sales EU_Sales Marketing_Expenses Media_Exposure Social_Trend Web_Sales Web_Traffic"
+d12 40
+a52 14
+stime=`date -d "1/1/2015" +%s`
+etime=`date -d "12/1/2015" +%s`
+dt=86400
+
+for itype in $type; do 
+   rrdf=$rrdpath/${cus}/${itype}.rrd
+
+  for ts in `seq $stime $dt $etime`; do 
+   echo $ts
+   r1=$RANDOM
+   /usr/bin/rrdtool update $rrdf "$ts:$r1" 
+  done 
+
+done
+@

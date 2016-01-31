@@ -1,0 +1,63 @@
+head	1.1;
+access;
+symbols;
+locks
+	root:1.1; strict;
+comment	@# @;
+
+
+1.1
+date	2015.12.02.23.36.26;	author root;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#! /usr/bin/bash
+
+#cus=$1  # customer name
+#type=$2
+ts=$1     # time scale 
+
+#cus="Gap"
+#type="Stock_Prices US_Sales China_Sales EU_Sales Marketing_Expenses Media_Exposure Social_Trend Web_Sales Web_Traffic"
+#for itype in $type; do
+# echo "DEF:$itype=/var/www/data/$cus/${itype}.rrd:$itype:AVERAGE \\"
+#done
+
+let stime=-86400*30*ts
+
+/usr/bin/rrdtool graph /var/www/html/images/test.png \
+--imgformat=PNG \
+--start=$stime \
+--title="$cus Data ($ts-day)" \
+--rigid \
+--base=1000 \
+--height=520 \
+--width=1000 \
+--alt-autoscale-max \
+--lower-limit=0 \
+--vertical-label="Your Data" \
+--units-exponent=0 \
+DEF:Stock_Prices=/var/www/data/Gap/Stock_Prices.rrd:Stock_Prices:AVERAGE \
+DEF:US_Sales=/var/www/data/Gap/US_Sales.rrd:US_Sales:AVERAGE \
+DEF:China_Sales=/var/www/data/Gap/China_Sales.rrd:China_Sales:AVERAGE \
+DEF:EU_Sales=/var/www/data/Gap/EU_Sales.rrd:EU_Sales:AVERAGE \
+DEF:Marketing_Expenses=/var/www/data/Gap/Marketing_Expenses.rrd:Marketing_Expenses:AVERAGE \
+DEF:Media_Exposure=/var/www/data/Gap/Media_Exposure.rrd:Media_Exposure:AVERAGE \
+DEF:Social_Trend=/var/www/data/Gap/Social_Trend.rrd:Social_Trend:AVERAGE \
+DEF:Web_Sales=/var/www/data/Gap/Web_Sales.rrd:Web_Sales:AVERAGE \
+DEF:Web_Traffic=/var/www/data/Gap/Web_Traffic.rrd:Web_Traffic:AVERAGE \
+AREA:Stock_Prices#FF9933:"Stock Prices" \
+LINE2:Web_Traffic#009933:"Web Traffic" \
+LINE4:Web_Sales#FF0033:"Web Sales" 
+
+@

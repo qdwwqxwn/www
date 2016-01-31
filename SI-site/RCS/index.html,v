@@ -1,0 +1,54 @@
+head	1.1;
+access;
+symbols;
+locks
+	ec2-user:1.1; strict;
+comment	@# @;
+
+
+1.1
+date	2015.12.20.23.25.02;	author ec2-user;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@<html>
+<head>
+</head>
+<body> 
+<p>
+
+Sky Informatics mines satellite data to create analytics and forecasts 
+of high commercial value. 
+
+<p> 
+
+Satellites offer much more than awesome pictures. 
+They measure cloudiness and wind speed.
+They monitor hurricanes, floods and droughts. 
+They quantify rainfall and snowpacks. 
+They detect changes in soil moisture and ground water. 
+They sense the types and productivity of commodity crops.  
+And there are decades of such data. 
+
+<p> 
+
+At Sky Informatics, based on our expertise in data science and remote sensing, 
+we integrate a wide array of satellite data and 
+economic activity data, develop analytical models, and create 
+insights and forecasts of high commerical impact. 
+
+</body>
+</html> 
+
+
+@
